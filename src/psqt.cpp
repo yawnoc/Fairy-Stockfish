@@ -188,6 +188,8 @@ void init(const Variant* v) {
                                   : isSlider    ? make_score(5, 5) * (2 * f + std::max(std::min(r, Rank(v->maxRank - r)), RANK_1) - v->maxFile - 1)
                                   : isPawn      ? make_score(5, 5) * (2 * f - v->maxFile)
                                                 : make_score(10, 10) * (1 + isSlowLeaper) * (f + std::max(std::min(r, Rank(v->maxRank - r)), RANK_1) - v->maxFile / 2));
+          if (v->capturesToHand)
+              psq[pc][s] = psq[pc][s] * 2 - score;
           if (pt == SOLDIER && r < v->soldierPromotionRank)
               psq[pc][s] -= score * (v->soldierPromotionRank - r) / (4 + f);
           if (v->enclosingDrop == REVERSI)
