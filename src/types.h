@@ -643,6 +643,10 @@ inline Color color_of(Piece pc) {
   return Color(pc >> PIECE_TYPE_BITS);
 }
 
+constexpr bool is_fairy(PieceType pt) {
+  return pt > QUEEN && pt != KING;
+}
+
 constexpr bool is_ok(Square s) {
   return s >= SQ_A1 && s <= SQ_MAX;
 }

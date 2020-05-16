@@ -676,6 +676,19 @@ namespace {
         if (weak & attackedBy[Us][KING])
             score += ThreatByKing;
 
+        // Fairy piece threats
+        for (PieceType pt : pos.piece_types())
+        {
+            b = weak & attackedBy[Us][pt];
+            while (b)
+            {
+                PieceType ptAttacked = type_of(pos.piece_on(pop_lsb(&b)));
+                if (is_fairy(pt) || is_fairy(ptAttacked))
+                    score += make_score(std::max(PieceValue[MG][ptAttacked] - PieceValue[MG][pt] / 4, Value(200)),
+                                        std::max(PieceValue[EG][ptAttacked] - PieceValue[EG][pt] / 4, Value(200))) / 20;
+            }
+        }
+
         b =  ~attackedBy[Them][ALL_PIECES]
            | (nonPawnEnemies & attackedBy2[Us]);
         score += Hanging * popcount(weak & b);
