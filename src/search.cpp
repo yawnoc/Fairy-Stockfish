@@ -1710,6 +1710,7 @@ moves_loop: // When in check, search starts from here
         // Decrease all the non-best quiet moves
         for (int i = 0; i < quietCount; ++i)
         {
+            if (type_of(bestMove) != DROP || type_of(quietsSearched[i]) != DROP || to_sq(bestMove) != to_sq(quietsSearched[i]))
             thisThread->mainHistory[us][from_to(quietsSearched[i])] << -bonus2;
             update_continuation_histories(ss, pos.moved_piece(quietsSearched[i]), to_sq(quietsSearched[i]), -bonus2);
         }
