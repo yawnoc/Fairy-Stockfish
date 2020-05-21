@@ -683,8 +683,12 @@ constexpr Square from_sq(Move m) {
   return type_of(m) == DROP ? SQ_NONE : Square((m >> SQUARE_BITS) & SQUARE_BIT_MASK);
 }
 
+constexpr PieceType dropped_piece_type(Move m) {
+  return PieceType((m >> (2 * SQUARE_BITS + MOVE_TYPE_BITS)) & (PIECE_TYPE_NB - 1));
+}
+
 inline int from_to(Move m) {
- return to_sq(m) + (from_sq(m) << SQUARE_BITS);
+ return to_sq(m) + ((from_sq(m) + (type_of(m) == DROP ? dropped_piece_type(m) : 0)) << SQUARE_BITS);
 }
 
 inline PieceType promotion_type(Move m) {
@@ -727,10 +731,6 @@ constexpr Move reverse_move(Move m) {
 template<MoveType T>
 constexpr Move make_gating(Square from, Square to, PieceType pt, Square gate) {
   return Move((gate << (2 * SQUARE_BITS + MOVE_TYPE_BITS + PIECE_TYPE_BITS)) + (pt << (2 * SQUARE_BITS + MOVE_TYPE_BITS)) + T + (from << SQUARE_BITS) + to);
-}
-
-constexpr PieceType dropped_piece_type(Move m) {
-  return PieceType((m >> (2 * SQUARE_BITS + MOVE_TYPE_BITS)) & (PIECE_TYPE_NB - 1));
 }
 
 constexpr PieceType in_hand_piece_type(Move m) {
