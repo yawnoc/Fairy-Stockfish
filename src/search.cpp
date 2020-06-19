@@ -66,9 +66,19 @@ namespace {
   constexpr uint64_t ttHitAverageResolution = 1024;
 
   // Razor and futility margins
-  constexpr int RazorMargin = 531;
+  int RazorMargin = 531;
+  int margin[] = { 217, 256, 102, 157, 154 };
+  int windows[] = { 21, 32, 68, 32 };
+  int nmp_margin[] = { 292, 854, 192};
+  int probcut_margin = 189;
+  int see_margin[] = { 235, 172, 194 };
+  TUNE(SetRange(1, 3000), RazorMargin,
+       SetRange(1, 800), margin, probcut_margin, see_margin,
+       SetRange(1, 200), windows,
+       SetRange(1, 2000), nmp_margin);
+
   Value futility_margin(Depth d, bool improving) {
-    return Value(217 * (d - improving));
+    return Value(margin[0] * (d - improving));
   }
 
   // Reductions lookup table, initialized at startup
@@ -459,12 +469,12 @@ void Thread::search() {
           if (rootDepth >= 4)
           {
               Value previousScore = rootMoves[pvIdx].previousScore;
-              delta = Value(21 * (1 + rootPos.captures_to_hand()) + abs(previousScore) / 256);
+              delta = Value(windows[0] * (1 + rootPos.captures_to_hand()) + abs(previousScore) / margin[1]);
               alpha = std::max(previousScore - delta,-VALUE_INFINITE);
               beta  = std::min(previousScore + delta, VALUE_INFINITE);
 
               // Adjust contempt based on root move's previousScore (dynamic contempt)
-              int dct = ct + (102 - ct / 2) * previousScore / (abs(previousScore) + 157);
+              int dct = ct + (margin[2] - ct / 2) * previousScore / (abs(previousScore) + margin[3]);
 
               contempt = (us == WHITE ?  make_score(dct, dct / 2)
                                       : -make_score(dct, dct / 2));
@@ -914,7 +924,7 @@ namespace {
         && (ss-1)->statScore < 23397
         &&  eval >= beta
         &&  eval >= ss->staticEval
-        &&  ss->staticEval >= beta - 32 * depth - 30 * improving + 120 * ttPv + 292
+        &&  ss->staticEval >= beta - windows[1] * depth - 30 * improving + 120 * ttPv + nmp_margin[0]
         && !excludedMove
         &&  pos.non_pawn_material(us)
         &&  pos.count<ALL_PIECES>(~us) != pos.count<PAWN>(~us)
@@ -923,7 +933,7 @@ namespace {
         assert(eval - beta >= 0);
 
         // Null move dynamic reduction based on depth and value
-        Depth R = (854 - 150 * !pos.checking_permitted() + 68 * depth) / 258 + std::min(int(eval - beta) / 192, 3);
+        Depth R = (nmp_margin[1] - 150 * !pos.checking_permitted() + windows[2] * depth) / 258 + std::min(int(eval - beta) / nmp_margin[2], 3);
 
         ss->currentMove = MOVE_NULL;
         ss->continuationHistory = &thisThread->continuationHistory[0][0][NO_PIECE][0];
@@ -966,7 +976,7 @@ namespace {
         &&  depth >= 5
         &&  abs(beta) < VALUE_TB_WIN_IN_MAX_PLY)
     {
-        Value raisedBeta = std::min(beta + (189 + 20 * !!pos.capture_the_flag_piece()) * (1 + pos.check_counting() + (pos.extinction_value() != VALUE_NONE)) - 45 * improving, VALUE_INFINITE);
+        Value raisedBeta = std::min(beta + (probcut_margin + 20 * !!pos.capture_the_flag_piece()) * (1 + pos.check_counting() + (pos.extinction_value() != VALUE_NONE)) - 45 * improving, VALUE_INFINITE);
         MovePicker mp(pos, ttMove, raisedBeta - ss->staticEval, &thisThread->captureHistory);
         int probCutCount = 0;
 
@@ -1096,7 +1106,7 @@ moves_loop: // When in check, search starts from here
                   && !inCheck
                   && !(   pos.extinction_value() == -VALUE_MATE
                        && pos.extinction_piece_types().find(ALL_PIECES) == pos.extinction_piece_types().end())
-                  && ss->staticEval + 235 + 172 * lmrDepth <= alpha
+                  && ss->staticEval + see_margin[0] + see_margin[1] * lmrDepth <= alpha
                   &&  thisThread->mainHistory[us][from_to(move)]
                     + (*contHist[0])[history_slot(movedPiece)][to_sq(move)]
                     + (*contHist[1])[history_slot(movedPiece)][to_sq(move)]
@@ -1104,10 +1114,10 @@ moves_loop: // When in check, search starts from here
                   continue;
 
               // Prune moves with negative SEE (~20 Elo)
-              if (!pos.see_ge(move, Value(-(32 - std::min(lmrDepth, 18)) * lmrDepth * lmrDepth)))
+              if (!pos.see_ge(move, Value(-(windows[3] - std::min(lmrDepth, 18)) * lmrDepth * lmrDepth)))
                   continue;
           }
-          else if (!pos.see_ge(move, Value(-194 - 120 * pos.captures_to_hand()) * depth)) // (~25 Elo)
+          else if (!pos.see_ge(move, Value(-see_margin[2] - 120 * pos.captures_to_hand()) * depth)) // (~25 Elo)
               continue;
       }
 
@@ -1532,7 +1542,7 @@ moves_loop: // When in check, search starts from here
         if (PvNode && bestValue > alpha)
             alpha = bestValue;
 
-        futilityBase = bestValue + 154;
+        futilityBase = bestValue + margin[4];
     }
 
     const PieceToHistory* contHist[] = { (ss-1)->continuationHistory, (ss-2)->continuationHistory,
