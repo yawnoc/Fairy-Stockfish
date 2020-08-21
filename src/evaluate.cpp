@@ -78,8 +78,15 @@ namespace {
   constexpr Value LazyThreshold  = Value(1400);
   constexpr Value SpaceThreshold = Value(12222);
 
+  int KingDangerWeights [] = {185, 148, 98, 69, 3, 6, 4, 37};
+
   // KingAttackWeights[PieceType] contains king attack weights by piece type
-  constexpr int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 81, 52, 44, 10, 40 };
+  int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 81, 52, 44, 10, 40 };
+
+  TUNE(SetRange(0, 500), KingDangerWeights[0], KingDangerWeights[1], KingDangerWeights[2], KingDangerWeights[3],
+       SetRange(-1000, 1000), KingDangerWeights[7],
+       SetRange(0, 30), KingDangerWeights[4], KingDangerWeights[5], KingDangerWeights[6],
+       SetRange(0, 200), KingAttackWeights[4], KingAttackWeights[6]);
 
   // Penalties for enemy's safe checks
   constexpr int QueenSafeCheck  = 772;
@@ -585,19 +592,19 @@ namespace {
     kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                  +       kingAttackersCountInHand[Them] * kingAttackersWeight[Them]
                  +       kingAttackersCount[Them] * kingAttackersWeightInHand[Them]
-                 + 185 * popcount(kingRing[Us] & (weak | ~pos.board_bb(Us, KING))) * (1 + pos.captures_to_hand() + pos.check_counting())
-                 + 148 * popcount(unsafeChecks) * (1 + pos.check_counting())
-                 +  98 * popcount(pos.blockers_for_king(Us))
-                 +  69 * kingAttacksCount[Them] * (2 + 8 * pos.check_counting() + pos.captures_to_hand()) / 2
-                 +   3 * kingFlankAttack * kingFlankAttack / 8
+                 + KingDangerWeights[0] * popcount(kingRing[Us] & (weak | ~pos.board_bb(Us, KING))) * (1 + pos.captures_to_hand() + pos.check_counting())
+                 + KingDangerWeights[1] * popcount(unsafeChecks) * (1 + pos.check_counting())
+                 + KingDangerWeights[2] * popcount(pos.blockers_for_king(Us))
+                 + KingDangerWeights[3] * kingAttacksCount[Them] * (2 + 8 * pos.check_counting() + pos.captures_to_hand()) / 2
+                 + KingDangerWeights[4] * kingFlankAttack * kingFlankAttack / 8
                  +       mg_value(mobility[Them] - mobility[Us])
                  - 873 * !(pos.major_pieces(Them) || pos.captures_to_hand())
                        * 2 / (2 + 2 * pos.check_counting() + 2 * pos.two_boards() + 2 * pos.makpong()
                                 + (pos.king_type() != KING) * (pos.diagonal_lines() ? 1 : 2))
                  - 100 * bool(attackedBy[Us][KNIGHT] & attackedBy[Us][KING])
-                 -   6 * mg_value(score) / 8
-                 -   4 * kingFlankDefense
-                 +  37;
+                 - KingDangerWeights[5] * mg_value(score) / 8
+                 - KingDangerWeights[6] * kingFlankDefense
+                 + KingDangerWeights[7];
 
     // Transform the kingDanger units into a Score, and subtract it from the evaluation
     if (kingDanger > 100)
