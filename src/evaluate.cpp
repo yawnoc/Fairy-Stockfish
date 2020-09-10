@@ -448,13 +448,14 @@ namespace {
   Score Evaluation<T>::hand(PieceType pt) {
 
     constexpr Color Them = ~Us;
+    constexpr Direction Down = pawn_push(Them);
 
     Score score = SCORE_ZERO;
 
     if (pos.count_in_hand(Us, pt))
     {
         Bitboard b = pos.drop_region(Us, pt) & ~pos.pieces() & (~attackedBy2[Them] | attackedBy[Us][ALL_PIECES]);
-        if ((b & kingRing[Them]) && pt != SHOGI_PAWN)
+        if ((b & (kingRing[Them] | shift<Down>(kingRing[Them]))) && pt != SHOGI_PAWN)
         {
             kingAttackersCountInHand[Us] += pos.count_in_hand(Us, pt);
             kingAttackersWeightInHand[Us] += KingAttackWeights[std::min(int(pt), QUEEN + 1)] * pos.count_in_hand(Us, pt);
@@ -591,7 +592,7 @@ namespace {
     int kingFlankDefense = popcount(b3);
 
     kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
-                 +       kingAttackersCountInHand[Them] * kingAttackersWeight[Them]
+                 +       kingAttackersCountInHand[Them] * kingAttackersWeight[Them] / 2
                  +       kingAttackersCount[Them] * kingAttackersWeightInHand[Them]
                  + 185 * popcount(kingRing[Us] & (weak | ~pos.board_bb(Us, KING))) * (1 + pos.captures_to_hand() + pos.check_counting())
                  + 148 * popcount(unsafeChecks) * (1 + pos.check_counting())
