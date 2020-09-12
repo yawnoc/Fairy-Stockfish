@@ -210,6 +210,8 @@ void init(const Variant* v) {
               if (f == FILE_A && (r == RANK_1 || r == v->maxRank))
                   psq[pc][s] += make_score(1000, 1000);
           }
+          if (v->capturesToHand)
+              psq[pc][s] = make_score(mg_value(psq[pc][s]), mg_value(psq[pc][s]));
           psq[~pc][rank_of(s) <= v->maxRank ? flip_rank(s, v->maxRank) : s] = -psq[pc][s];
       }
       // pieces in pocket
