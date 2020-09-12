@@ -454,7 +454,7 @@ namespace {
     if (pos.count_in_hand(Us, pt))
     {
         Bitboard b = pos.drop_region(Us, pt) & ~pos.pieces() & (~attackedBy2[Them] | attackedBy[Us][ALL_PIECES]);
-        if ((b & kingRing[Them]) && pt != SHOGI_PAWN)
+        if (b & kingRing[Them])
         {
             kingAttackersCountInHand[Us] += pos.count_in_hand(Us, pt);
             kingAttackersWeightInHand[Us] += KingAttackWeights[std::min(int(pt), QUEEN + 1)] * pos.count_in_hand(Us, pt);
